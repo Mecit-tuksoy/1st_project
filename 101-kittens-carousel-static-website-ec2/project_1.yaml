@@ -1,0 +1,42 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  Static website in EC2
+Resources: 
+  mecit_ec2:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: aws ssm get-parameters --names /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64 --query 'Parameters[0].[Value]' --output text
+      InstanceType: t2.micro
+      KeyName: firstkey
+      SecurityGroups: 
+        !Ref ec2-sec-group
+      Tags: 
+        - Key: Name
+          Value: Static-wep-instance
+      UserData: 
+        Fn::Base64:
+          !Sub |
+            #! /bin/bash
+            yum update -y
+            yum install httpd -y
+            wget 
+            wget 
+            wget 
+            wget 
+            wget 
+            wget 
+            systemctl start httpd
+            systemctl enable httpd 
+  ec2-sec-group:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allows SSH # Required
+      SecurityGroupIngress: 
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
