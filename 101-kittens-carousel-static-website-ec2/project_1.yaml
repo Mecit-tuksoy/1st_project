@@ -1,15 +1,19 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: |
   Static website in EC2
+Parameters:
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-minimal-kernel-default-x86_64
 Resources: 
-  mecit_ec2:
+  MecitWepServer:
     Type: AWS::EC2::Instance
     Properties:
-      ImageId: aws ssm get-parameters --names /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64 --query 'Parameters[0].[Value]' --output text
+      ImageId: !Ref LatestAmiId
       InstanceType: t2.micro
       KeyName: firstkey
       SecurityGroups: 
-        !Ref ec2-sec-group
+        - !Ref WebServerSG
       Tags: 
         - Key: Name
           Value: Static-wep-instance
@@ -17,25 +21,29 @@ Resources:
         Fn::Base64:
           !Sub |
             #! /bin/bash
-            yum update -y
-            yum install httpd -y
-            wget https://raw.githubusercontent.com/Mecit-tuksoy/my_projects/main/101-kittens-carousel-static-website-ec2/static-web/index.html
-            wget https://github.com/Mecit-tuksoy/my_projects/blob/main/101-kittens-carousel-static-website-ec2/static-web/cat0.jpg
-            wget https://github.com/Mecit-tuksoy/my_projects/blob/main/101-kittens-carousel-static-website-ec2/static-web/cat1.jpg
-            wget https://github.com/Mecit-tuksoy/my_projects/blob/main/101-kittens-carousel-static-website-ec2/static-web/cat2.jpg 
+            dnf update -y
+            dnf install httpd -y
+            sudo dnf install wget -y
+            FOLDER="https://raw.githubusercontent.com/Mecit-tuksoy/my_projects/main/101-kittens-carousel-static-website-ec2/static-web"
+            cd /var/www/html
+            wget $FOLDER/index.html
+            wget $FOLDER/cat0.jpg
+            wget $FOLDER/cat1.jpg
+            wget $FOLDER/cat2.jpg 
             systemctl start httpd
-            systemctl enable httpd 
-            
-  ec2-sec-group:
+            systemctl enable httpd  
+
+  WebServerSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Allows SSH # Required
+      GroupDescription: Enable HTTP for Apache Web Server and SSH for secure connection.
       SecurityGroupIngress: 
-        - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: 0.0.0.0/0
         - IpProtocol: tcp
           FromPort: 80
           ToPort: 80
           CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
