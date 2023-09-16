@@ -1,0 +1,52 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  CloudFormation Template for Roman Numerals Converter Application.
+Parameters:
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-minimal-kernel-default-x86_64
+Resources:
+  mecit_instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: t2.micro
+      KeyName: firstkey
+      SecurityGroups: 
+        - !Ref Mecit_SG
+      Tags: 
+        Key: Name
+        Value: Roman_Numerals_İnctance
+      UserData: 
+        Fn::Base64:
+          !Sub |
+            #! /bin/bash
+            dnf update -y
+            dnf install python3-pip -y
+            dnf install Flask -y
+            sudo dnf install wget -y
+            cd /home/ec2-user
+            wget https://raw.githubusercontent.com/Mecit-tuksoy/aws_projects/main/Roman-Numerals-Converter/roman-numerals-converter-app.py
+            mkdir templates
+            cd templates
+            wget https://raw.githubusercontent.com/Mecit-tuksoy/aws_projects/main/Roman-Numerals-Converter/templates/index.html
+            wget https://raw.githubusercontent.com/Mecit-tuksoy/aws_projects/main/Roman-Numerals-Converter/templates/result.html
+            cd ..
+            python3 app.py
+      Tags:
+        - Key: Name
+          Value: !Sub Web Server of ${AWS::StackName} Stack
+
+  Mecit_SG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: HTTP SHH
+      SecurityGroupIngress: 
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
