@@ -5,18 +5,23 @@ Parameters:
   LatestAmiId:
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Default: /aws/service/ami-amazon-linux-latest/al2023-ami-minimal-kernel-default-x86_64
+ 
+  keyName:
+    Description: My Key Pair
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: firstkey
 Resources:
   mecit:
     Type: AWS::EC2::Instance
     Properties:
       ImageId: !Ref LatestAmiId
       InstanceType: t2.micro
-      KeyName: firstkey
+      KeyName: !Ref keyName
       SecurityGroups: 
         - !Ref SG
-      Tags: 
-        Key: Name
-        Value: Roman_Numerals_İnctance
+      Tags:
+        - Key: Name
+          Value: !Sub Web Server of ${AWS::StackName} Stack
       UserData: 
         Fn::Base64:
           !Sub |
@@ -37,7 +42,7 @@ Resources:
   SG:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: HTTP SHH
+      GroupDescription: HTTP SHH and port 8080
       SecurityGroupIngress: 
         - IpProtocol: tcp
           FromPort: 80
@@ -51,3 +56,10 @@ Resources:
           FromPort: 8080
           ToPort: 8080
           CidrIp: 0.0.0.0/0
+
+Outputs:
+  WebsiteURL:
+    Value: !Sub 
+      - http://${PIA}
+      - PIA: !GetAtt mecit.PublicDnsName
+    Description: Roman Numerals Converter Application URL
